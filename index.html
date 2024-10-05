@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Glass Cracking Simulation with Hammer Blow</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: url('glass.jpg') no-repeat center center fixed;
+            background-size: cover;
+            cursor: none;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #hammer {
+            position: absolute;
+            pointer-events: none;
+            width: 120px;
+            height: 120px;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transform-origin: bottom center;
+        }
+
+        #hammer.swing {
+            animation: hammerSwing 0.3s forwards;
+        }
+
+        @keyframes hammerSwing {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            30% {
+                transform: translate(-50%, -50%) rotate(-45deg);
+            }
+            60% {
+                transform: translate(-50%, -50%) rotate(20deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.1));
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<img id="hammer" src="hammer.png" alt="Hammer Cursor">
+<audio id="shatter-sound" src="Glass breaking sound effect.mp4"></audio>
+
+<script>
+    const hammer = document.getElementById('hammer');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('load', resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
+
+    document.addEventListener('mousemove', (e) => {
+        hammer.style.left = `${e.clientX}px`;
+        hammer.style.top = `${e.clientY}px`;
+    });
+
+    document.addEventListener('click', (e) => {
+        const x = e.clientX;
+        const y = e.clientY;
+
+        hammer.classList.add('swing');
+
+        hammer.addEventListener('animationend', () => {
+            hammer.classList.remove('swing');
+        }, { once: true });
+
+        drawCrack(x, y);
+
+         const shatterSound = document.getElementById('shatter-sound');
+         shatterSound.currentTime = 0;
+         shatterSound.play();
+    });
+
+    function drawCrack(x, y) {
+        const numBranches = 5 + Math.floor(Math.random() * 5);
+        const maxLength = 50 + Math.random() * 50;
+        const angleIncrement = (Math.PI * 2) / numBranches;
+
+        for (let i = 0; i < numBranches; i++) {
+            const angle = angleIncrement * i + Math.random() * angleIncrement;
+            const length = maxLength * (0.7 + Math.random() * 0.3);
+
+            drawBranch(x, y, angle, length, 3);
+        }
+    }
+
+    function drawBranch(x, y, angle, length, thickness) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        const endX = x + length * Math.cos(angle);
+        const endY = y + length * Math.sin(angle);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.lineWidth = thickness;
+        ctx.stroke();
+
+        if (thickness > 1) {
+            const numSubBranches = Math.floor(Math.random() * 3);
+            for (let i = 0; i < numSubBranches; i++) {
+                const newAngle = angle + (Math.random() - 0.5) * Math.PI / 2; // Vary angle
+                const newLength = length * (0.5 + Math.random() * 0.5);
+                drawBranch(endX, endY, newAngle, newLength, thickness - 1);
+            }
+        }
+    }
+</script>
+</body>
+</html>
